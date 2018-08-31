@@ -27,7 +27,7 @@
 
                 <tbody>
                     <tr v-for='task in tasks'>
-                        <td><input type="checkbox" v-model="task.done"></td>
+                        <td><input type="checkbox" v-on:click="updateTask(task)" v-model="task.done"></td>
                         <td><span :class="{taskDone: task.done}">{{ task.name}}</span></td>
                         <td><button class="btn btn-danger btn-block" v-on:click="deleteTask(task)">Eliminar</button></td>
                     </tr>
@@ -60,19 +60,39 @@ export default {
           e.preventDefault();
           //This if prevents that the input adds empty tasks :D
           if (this.tasks.name !== ""){
-              this.tasks.push({
-                  name: this.tasks.name,
-                  done: false
+              let task = {
+                name: this.tasks.name,
+                done: false
+              };
+              this.$http.put("http://142.93.202.10:8080/tasks", task).then(result => {
+                this.tasks.push(result.body);
+                console.log(this.tasks);
+              }, error => {
+                console.error(error);
               });
               this.tasks.name="";
           }
-
       },
 
       //Vamos a usar javascript para entrar al array de task y dividirlo y tomar el valor que necesitamos para poder eliminarlo
       deleteTask: function (task) {
-          //Borra la primera ocurrencia de task
-          this.tasks.splice(this.tasks.indexOf(task), 1)
+          this.$http.delete("http://142.93.202.10:8080/tasks",  {body: { id: task.id }}).then(result => {
+            console.log(JSON.stringify(result.body));
+            //Borra la primera ocurrencia de task
+            this.tasks.splice(this.tasks.indexOf(task), 1);
+          }, error => {
+            console.error(error);
+          });
+      },
+
+      updateTask: function (task) {
+        task.done = !task.done;
+        this.$http.post("http://142.93.202.10:8080/tasks", task).then(result => {
+          console.log(JSON.stringify(result.body));
+          this.tasks = result.body;
+        }, error => {
+          console.error(error);
+        });
       }
   }
 }
